@@ -1,0 +1,16 @@
+node_modules
+.next
+.turbo
+.git
+.gitignore
+.env
+.env.local
+.env.production
+data/temples/*.json
+*.md
+!README.md
+.DS_Store
+.claude
+coverage
+dist
+*.log

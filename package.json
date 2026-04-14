@@ -1,0 +1,27 @@
+{
+  "name": "ttai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Temple Trustee AI Assistant — AI-powered decision intelligence for Hindu temple trustees",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "typecheck": "turbo typecheck",
+    "lint": "turbo lint",
+    "db:migrate": "pnpm --filter @ttai/db migrate",
+    "db:studio": "pnpm --filter @ttai/db studio",
+    "db:generate": "pnpm --filter @ttai/db generate",
+    "test:api-check": "pnpm --filter @ttai/ai-core test:api-check",
+    "test:qdrant-check": "pnpm --filter @ttai/ai-core test:qdrant-check",
+    "test:router": "pnpm --filter @ttai/ai-core test:router"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "typescript": "^5.6.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

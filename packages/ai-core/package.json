@@ -1,0 +1,40 @@
+{
+  "name": "@ttai/ai-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./router/*": "./src/router/*.ts",
+    "./engines/*": "./src/engines/*.ts",
+    "./tools/*": "./src/tools/*.ts",
+    "./prompts/*": "./src/prompts/*.ts",
+    "./memory/*": "./src/memory/*.ts",
+    "./types": "./src/types/index.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:api-check": "tsx src/tests/api-check.ts",
+    "test:qdrant-check": "tsx src/tests/qdrant-check.ts",
+    "test:router": "tsx src/tests/router-check.ts",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^1.1.0",
+    "@qdrant/js-client-rest": "^1.12.0",
+    "ai": "^4.1.0",
+    "openai": "^4.77.0",
+    "zod": "^3.24.0",
+    "@ttai/db": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "tsx": "^4.19.0",
+    "vitest": "^2.1.0",
+    "@types/node": "^20.0.0"
+  }
+}
