@@ -72,6 +72,10 @@ import type {
   DevoteeFeedback,
   PaymentModeRecord,
   DonationReceipt,
+  MonthlyPnL,
+  DailyStats,
+  Forecast,
+  KeyInsight,
 } from './temple-types';
 
 // ─── 5 TEMPLE PROFILES ────────────────────────────────────────
@@ -597,6 +601,224 @@ export function generateLargeTempleData(profile: TempleProfile): Temple {
     issueDate: dateStr(-Math.floor(i / 4) + intBetween(rng, 0, 7)),
   }));
 
+  // ── 36 MONTHS OF P&L ──
+  const monthlyPnL: MonthlyPnL[] = [];
+  const pnlMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  for (let back = 35; back >= 0; back--) {
+    const d = new Date('2026-04-01');
+    d.setMonth(d.getMonth() - back);
+    const monthLabel = `${pnlMonthNames[d.getMonth()]} ${d.getFullYear()}`;
+    const growth = 1 + (35 - back) * (0.008 + rng() * 0.004);
+    const seasonal = [0.9, 0.85, 1.0, 1.1, 1.05, 0.95, 1.15, 1.2, 1.1, 1.0, 1.25, 1.35][d.getMonth()] ?? 1;
+    const baseRev = intBetween(rng, 40_00_000, 1_20_00_000) * growth * seasonal;
+    const donations = Math.round(baseRev * (0.42 + rng() * 0.08));
+    const bookings = Math.round(baseRev * (0.18 + rng() * 0.05));
+    const sevas = Math.round(baseRev * (0.08 + rng() * 0.03));
+    const dharamshala = Math.round(baseRev * (0.04 + rng() * 0.02));
+    const parking = Math.round(baseRev * (0.02 + rng() * 0.01));
+    const shop = Math.round(baseRev * (0.03 + rng() * 0.02));
+    const hundi = Math.round(baseRev * (0.12 + rng() * 0.04));
+    const prasadamContribution = Math.round(baseRev * (0.04 + rng() * 0.02));
+    const miscellaneous = Math.round(baseRev * (0.02 + rng() * 0.02));
+    const revTotal = donations + bookings + sevas + dharamshala + parking + shop + hundi + prasadamContribution + miscellaneous;
+
+    const priestSalaries = Math.round(revTotal * (0.08 + rng() * 0.02));
+    const staffSalaries = Math.round(revTotal * (0.10 + rng() * 0.03));
+    const annadanamKitchen = Math.round(revTotal * (0.09 + rng() * 0.03));
+    const maintenance = Math.round(revTotal * (0.05 + rng() * 0.02));
+    const utilities = Math.round(revTotal * (0.04 + rng() * 0.01));
+    const festivalPreparations = Math.round(revTotal * ((d.getMonth() === 9 || d.getMonth() === 10 || d.getMonth() === 8) ? 0.12 : 0.03) * (0.8 + rng() * 0.4));
+    const security = Math.round(revTotal * (0.03 + rng() * 0.01));
+    const cleaning = Math.round(revTotal * (0.025 + rng() * 0.01));
+    const vendorPayments = Math.round(revTotal * (0.04 + rng() * 0.02));
+    const administration = Math.round(revTotal * (0.03 + rng() * 0.01));
+    const expTotal = priestSalaries + staffSalaries + annadanamKitchen + maintenance + utilities + festivalPreparations + security + cleaning + vendorPayments + administration;
+
+    const netSurplus = revTotal - expTotal;
+    monthlyPnL.push({
+      month: monthLabel,
+      revenue: { donations, bookings, sevas, dharamshala, parking, shop, hundi, prasadamContribution, miscellaneous, total: revTotal },
+      expenses: { priestSalaries, staffSalaries, annadanamKitchen, maintenance, utilities, festivalPreparations, security, cleaning, vendorPayments, administration, total: expTotal },
+      netSurplusINR: netSurplus,
+      marginPercent: Math.round((netSurplus / revTotal) * 1000) / 10,
+    });
+  }
+
+  // ── 365 DAYS OF DAILY STATS ──
+  const dailyStats: DailyStats[] = [];
+  const notableEvents = ['Normal operations', 'Normal operations', 'Normal operations', 'Normal operations', 'VIP visit recorded', 'Festival day — high footfall', 'Power outage — 2 hours', 'Annadanam expanded for charity', 'Corporate group booking', 'Media coverage — crowd surge', 'Senior citizen camp', 'School darshan visit'];
+  for (let back = 364; back >= 0; back--) {
+    const d = new Date('2026-04-14');
+    d.setDate(d.getDate() - back);
+    const iso = d.toISOString().split('T')[0]!;
+    const dow = DAYS[(d.getDay() + 6) % 7]!;
+    const weekendBoost = (d.getDay() === 0 || d.getDay() === 6) ? 1.6 : 1.0;
+    const seasonalBoost = [0.9, 0.85, 1.0, 1.1, 1.05, 0.95, 1.15, 1.2, 1.1, 1.0, 1.25, 1.35][d.getMonth()] ?? 1;
+    const footfall = Math.round(intBetween(rng, 3_000, 15_000) * weekendBoost * seasonalBoost);
+    const donationsINR = Math.round(intBetween(rng, 1_00_000, 15_00_000) * weekendBoost * seasonalBoost);
+    const bookingsCount = Math.round(intBetween(rng, 50, 400) * weekendBoost * seasonalBoost);
+    dailyStats.push({
+      date: iso,
+      dayOfWeek: dow,
+      footfall,
+      donationsINR,
+      bookingsCount,
+      complaintsOpened: intBetween(rng, 0, 25),
+      complaintsResolved: intBetween(rng, 0, 20),
+      avgDarshanWaitMinutes: Math.round(intBetween(rng, 15, 120) * weekendBoost),
+      prasadamServed: Math.round(footfall * (0.3 + rng() * 0.3)),
+      hundiCollectionINR: intBetween(rng, 20_000, 3_00_000),
+      incidentsReported: rng() > 0.85 ? intBetween(rng, 1, 4) : 0,
+      notableEvent: rng() > 0.85 ? pick(rng, notableEvents) : 'Normal operations',
+    });
+  }
+
+  // ── 12-MONTH FORECAST ──
+  const forecasts: Forecast[] = [];
+  const recentAvgRev = monthlyPnL.slice(-6).reduce((s, m) => s + m.revenue.total, 0) / 6;
+  const recentAvgExp = monthlyPnL.slice(-6).reduce((s, m) => s + m.expenses.total, 0) / 6;
+  const recentAvgFootfall = dailyStats.slice(-90).reduce((s, d) => s + d.footfall, 0) / 90 * 30;
+  const recentAvgBookings = dailyStats.slice(-90).reduce((s, d) => s + d.bookingsCount, 0) / 90 * 30;
+  const festNamesForecast = FESTIVALS_BY_DEITY[profile.deity] ?? ['Navratri', 'Diwali'];
+  for (let ahead = 1; ahead <= 12; ahead++) {
+    const d = new Date('2026-04-01');
+    d.setMonth(d.getMonth() + ahead);
+    const monthLabel = `${pnlMonthNames[d.getMonth()]} ${d.getFullYear()}`;
+    const seasonal = [0.9, 0.85, 1.0, 1.1, 1.05, 0.95, 1.15, 1.2, 1.1, 1.0, 1.25, 1.35][d.getMonth()] ?? 1;
+    const growth = 1 + ahead * 0.01;
+    const projRev = Math.round(recentAvgRev * seasonal * growth);
+    const projExp = Math.round(recentAvgExp * seasonal * (1 + ahead * 0.008));
+    const festThisMonth = pick(rng, festNamesForecast);
+    forecasts.push({
+      month: monthLabel,
+      projectedRevenueINR: projRev,
+      projectedExpensesINR: projExp,
+      projectedSurplusINR: projRev - projExp,
+      projectedFootfall: Math.round(recentAvgFootfall * seasonal * growth),
+      projectedBookings: Math.round(recentAvgBookings * seasonal * growth),
+      dominantFestival: festThisMonth,
+      confidence: ahead <= 3 ? 'high' : ahead <= 6 ? 'medium' : 'low',
+      notes: ahead <= 3 ? 'Near-term — based on last 6 months trend' : ahead <= 6 ? 'Mid-term — includes seasonal swing' : 'Long-term — directional only, review quarterly',
+    });
+  }
+
+  // ── KEY INSIGHTS (pre-computed) ──
+  const lastMonth = monthlyPnL[monthlyPnL.length - 1]!;
+  const prevMonth = monthlyPnL[monthlyPnL.length - 2]!;
+  const yearAgo = monthlyPnL[Math.max(0, monthlyPnL.length - 13)]!;
+  const lapsedCountIns = donorDirectory.filter(d => d.lapsed).length;
+  const lapsedValueIns = donorDirectory.filter(d => d.lapsed).reduce((s, d) => s + d.totalDonatedINR, 0);
+  const platCount = donorDirectory.filter(d => d.tier === 'platinum').length;
+  const openCompIns = complaintLog.filter(c => c.status !== 'resolved').length;
+  const avgWaitLast30 = Math.round(dailyStats.slice(-30).reduce((s, d) => s + d.avgDarshanWaitMinutes, 0) / 30);
+  const expiringVendors = vendorContracts.filter(v => v.renewalStatus === 'expiring-soon').length;
+  const criticalStock = inventoryAlerts.filter(i => i.current < i.minimum * 0.5).length;
+  const momRevChange = Math.round(((lastMonth.revenue.total - prevMonth.revenue.total) / prevMonth.revenue.total) * 1000) / 10;
+  const yoyRevChange = Math.round(((lastMonth.revenue.total - yearAgo.revenue.total) / yearAgo.revenue.total) * 1000) / 10;
+
+  const keyInsights: KeyInsight[] = [
+    {
+      id: 'INS-001',
+      category: 'revenue',
+      headline: `Month-on-month revenue ${momRevChange >= 0 ? 'up' : 'down'} ${Math.abs(momRevChange)}%`,
+      detail: `Last month ${fmt(lastMonth.revenue.total)} vs prior ${fmt(prevMonth.revenue.total)}.`,
+      metricValue: `${momRevChange >= 0 ? '+' : ''}${momRevChange}%`,
+      direction: momRevChange >= 1 ? 'up' : momRevChange <= -1 ? 'down' : 'flat',
+      urgency: momRevChange < -5 ? 'high' : momRevChange < 0 ? 'medium' : 'low',
+      recommendedAction: momRevChange < 0 ? 'Investigate drop: check bookings pipeline and donor reactivation.' : 'Maintain momentum; double down on top-performing revenue stream.',
+    },
+    {
+      id: 'INS-002',
+      category: 'revenue',
+      headline: `Year-on-year revenue ${yoyRevChange >= 0 ? 'up' : 'down'} ${Math.abs(yoyRevChange)}%`,
+      detail: `This month ${fmt(lastMonth.revenue.total)} vs same month last year ${fmt(yearAgo.revenue.total)}.`,
+      metricValue: `${yoyRevChange >= 0 ? '+' : ''}${yoyRevChange}%`,
+      direction: yoyRevChange >= 1 ? 'up' : yoyRevChange <= -1 ? 'down' : 'flat',
+      urgency: yoyRevChange < -10 ? 'high' : 'low',
+      recommendedAction: 'Review strategic drivers behind YoY shift in trustee meeting.',
+    },
+    {
+      id: 'INS-003',
+      category: 'devotee',
+      headline: `${lapsedCountIns.toLocaleString('en-IN')} lapsed donors holding ${fmt(lapsedValueIns)} dormant value`,
+      detail: `${platCount} platinum donors at risk if lapsed. Reactivation campaign could recover 10-20% of dormant value.`,
+      metricValue: fmt(lapsedValueIns),
+      direction: 'down',
+      urgency: 'high',
+      recommendedAction: 'Launch personalized reactivation journey for top 50 lapsed platinum/gold donors.',
+    },
+    {
+      id: 'INS-004',
+      category: 'cost',
+      headline: `Top expense category: ${lastMonth.expenses.annadanamKitchen > lastMonth.expenses.staffSalaries ? 'Annadanam Kitchen' : 'Staff Salaries'}`,
+      detail: `Annadanam ${fmt(lastMonth.expenses.annadanamKitchen)} (${Math.round(lastMonth.expenses.annadanamKitchen / lastMonth.expenses.total * 100)}%), Staff ${fmt(lastMonth.expenses.staffSalaries)} (${Math.round(lastMonth.expenses.staffSalaries / lastMonth.expenses.total * 100)}%).`,
+      metricValue: fmt(Math.max(lastMonth.expenses.annadanamKitchen, lastMonth.expenses.staffSalaries)),
+      direction: 'flat',
+      urgency: 'medium',
+      recommendedAction: 'Review vendor rates on prasadam ingredients and prasadam wastage — ~15% prep-to-distribution gap is visible in data.',
+    },
+    {
+      id: 'INS-005',
+      category: 'operations',
+      headline: `Avg darshan wait last 30 days: ${avgWaitLast30} min`,
+      detail: `Weekend peaks push wait above 90 min on multiple days. Darshan token batching could cut it by 20-30%.`,
+      metricValue: `${avgWaitLast30} min`,
+      direction: avgWaitLast30 > 60 ? 'up' : 'flat',
+      urgency: avgWaitLast30 > 90 ? 'high' : avgWaitLast30 > 60 ? 'medium' : 'low',
+      recommendedAction: 'Pilot slot-based token system for Saturday 5-8 PM window.',
+    },
+    {
+      id: 'INS-006',
+      category: 'risk',
+      headline: `${openCompIns.toLocaleString('en-IN')} active complaints unresolved`,
+      detail: `Top categories: ${topComplaints.slice(0, 3).map(t => t.category).join(', ')}. Oldest complaints > 30 days old.`,
+      metricValue: openCompIns.toString(),
+      direction: 'up',
+      urgency: openCompIns > 500 ? 'high' : 'medium',
+      recommendedAction: 'Assign complaint-clearing sprint; target 80% resolution in 2 weeks.',
+    },
+    {
+      id: 'INS-007',
+      category: 'risk',
+      headline: `${expiringVendors} vendor contracts expiring within 30 days`,
+      detail: 'Unrenewed contracts at risk: flowers, cleaning, prasadam ingredients.',
+      metricValue: expiringVendors.toString(),
+      direction: 'flat',
+      urgency: expiringVendors > 10 ? 'high' : 'medium',
+      recommendedAction: 'Trigger vendor renewal workflow; get 3 competitive quotes per category.',
+    },
+    {
+      id: 'INS-008',
+      category: 'risk',
+      headline: `${criticalStock} inventory items at critical low`,
+      detail: 'Items below 50% of minimum threshold — stockout risk during next festival.',
+      metricValue: criticalStock.toString(),
+      direction: 'down',
+      urgency: criticalStock > 100 ? 'high' : criticalStock > 30 ? 'medium' : 'low',
+      recommendedAction: 'Raise emergency PO for camphor, ghee, marigold garlands before festival week.',
+    },
+    {
+      id: 'INS-009',
+      category: 'opportunity',
+      headline: `Next festival projected footfall: ${upcomingFestivals.filter(f => new Date(f.date) > new Date('2026-04-14')).slice(0, 1).map(f => f.expectedFootfall.toLocaleString('en-IN')).join('') || 'TBD'}`,
+      detail: 'Premium puja packages + targeted platinum-tier outreach could lift per-devotee revenue by 15-20%.',
+      metricValue: 'Festival',
+      direction: 'up',
+      urgency: 'medium',
+      recommendedAction: 'Pre-launch premium festival booking pack 4 weeks ahead; open VIP darshan slots.',
+    },
+    {
+      id: 'INS-010',
+      category: 'opportunity',
+      headline: `Forecast next 3 months: ${fmt(forecasts.slice(0, 3).reduce((s, f) => s + f.projectedSurplusINR, 0))} cumulative surplus`,
+      detail: `Based on trailing 6-month average, seasonal swing, and ${((35 - 0) * 1.0).toFixed(1)}% trailing growth.`,
+      metricValue: fmt(forecasts.slice(0, 3).reduce((s, f) => s + f.projectedSurplusINR, 0)),
+      direction: 'up',
+      urgency: 'low',
+      recommendedAction: 'Earmark 20% of projected surplus for capex: parking expansion and digital kiosks.',
+    },
+  ];
+
   return {
     ...profile,
     stats: {
@@ -642,6 +864,10 @@ export function generateLargeTempleData(profile: TempleProfile): Temple {
     devoteeFeedback,
     paymentModes,
     donationReceipts,
+    monthlyPnL,
+    dailyStats,
+    forecasts,
+    keyInsights,
     connector: {
       type: 'mock',
       credentials: {},
@@ -681,10 +907,14 @@ export function getRowCounts(temple: Temple): Record<string, number> {
     'Devotee Feedback': temple.devoteeFeedback.length,
     'Payment Modes': temple.paymentModes.length,
     'Donation Receipts': temple.donationReceipts.length,
+    'Monthly P&L': temple.monthlyPnL.length,
+    'Daily Stats': temple.dailyStats.length,
+    'Forecasts': temple.forecasts.length,
+    'Key Insights': temple.keyInsights.length,
     'Reconciliation': 1,
     'Monthly Finance': 1,
     'Stats': 1,
     'Profile': 1,
-    'TOTAL': temple.recentDonations.length + temple.donorDirectory.length + temple.upcomingBookings.length + temple.complaintLog.length + temple.inventoryAlerts.length + temple.staffRoster.length + temple.priests.length + temple.upcomingFestivals.length + temple.vipVisits.length + temple.historicalComparisons.length + temple.pendingDecisions.length + temple.topComplaints.length + temple.sevaBookings.length + temple.prasadamRecords.length + temple.dharamshalaBookings.length + temple.parkingTokens.length + temple.hundiCollections.length + temple.darshanTokens.length + temple.shopSales.length + temple.aartiSchedule.length + temple.vendorContracts.length + temple.utilityBills.length + temple.cctvIncidents.length + temple.lostAndFound.length + temple.devoteeFeedback.length + temple.paymentModes.length + temple.donationReceipts.length + 4,
+    'TOTAL': temple.recentDonations.length + temple.donorDirectory.length + temple.upcomingBookings.length + temple.complaintLog.length + temple.inventoryAlerts.length + temple.staffRoster.length + temple.priests.length + temple.upcomingFestivals.length + temple.vipVisits.length + temple.historicalComparisons.length + temple.pendingDecisions.length + temple.topComplaints.length + temple.sevaBookings.length + temple.prasadamRecords.length + temple.dharamshalaBookings.length + temple.parkingTokens.length + temple.hundiCollections.length + temple.darshanTokens.length + temple.shopSales.length + temple.aartiSchedule.length + temple.vendorContracts.length + temple.utilityBills.length + temple.cctvIncidents.length + temple.lostAndFound.length + temple.devoteeFeedback.length + temple.paymentModes.length + temple.donationReceipts.length + temple.monthlyPnL.length + temple.dailyStats.length + temple.forecasts.length + temple.keyInsights.length + 4,
   };
 }

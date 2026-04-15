@@ -315,5 +315,9 @@ export function generateTempleData(profile: TempleProfile): Temple {
     devoteeFeedback: [],
     paymentModes: [],
     donationReceipts: [],
+    monthlyPnL: [],
+    dailyStats: [],
+    forecasts: [],
+    keyInsights: [],
   };
 }

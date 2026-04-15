@@ -104,6 +104,10 @@ export interface Temple extends TempleProfile {
   devoteeFeedback: DevoteeFeedback[];
   paymentModes: PaymentModeRecord[];
   donationReceipts: DonationReceipt[];
+  monthlyPnL: MonthlyPnL[];
+  dailyStats: DailyStats[];
+  forecasts: Forecast[];
+  keyInsights: KeyInsight[];
   connector?: ConnectorConfig;
 }
 
@@ -317,6 +321,77 @@ export interface DonationReceipt {
   donationDate: string;
   receiptStatus: 'issued' | 'pending' | 'overdue' | 'duplicate';
   issueDate: string;
+}
+
+// ─── FINANCE, DAILY STATS, FORECASTS, INSIGHTS ─────────────
+
+export interface MonthlyPnL {
+  month: string;
+  revenue: {
+    donations: number;
+    bookings: number;
+    sevas: number;
+    dharamshala: number;
+    parking: number;
+    shop: number;
+    hundi: number;
+    prasadamContribution: number;
+    miscellaneous: number;
+    total: number;
+  };
+  expenses: {
+    priestSalaries: number;
+    staffSalaries: number;
+    annadanamKitchen: number;
+    maintenance: number;
+    utilities: number;
+    festivalPreparations: number;
+    security: number;
+    cleaning: number;
+    vendorPayments: number;
+    administration: number;
+    total: number;
+  };
+  netSurplusINR: number;
+  marginPercent: number;
+}
+
+export interface DailyStats {
+  date: string;
+  dayOfWeek: string;
+  footfall: number;
+  donationsINR: number;
+  bookingsCount: number;
+  complaintsOpened: number;
+  complaintsResolved: number;
+  avgDarshanWaitMinutes: number;
+  prasadamServed: number;
+  hundiCollectionINR: number;
+  incidentsReported: number;
+  notableEvent: string;
+}
+
+export interface Forecast {
+  month: string;
+  projectedRevenueINR: number;
+  projectedExpensesINR: number;
+  projectedSurplusINR: number;
+  projectedFootfall: number;
+  projectedBookings: number;
+  dominantFestival: string;
+  confidence: 'high' | 'medium' | 'low';
+  notes: string;
+}
+
+export interface KeyInsight {
+  id: string;
+  category: 'revenue' | 'cost' | 'devotee' | 'operations' | 'risk' | 'opportunity';
+  headline: string;
+  detail: string;
+  metricValue: string;
+  direction: 'up' | 'down' | 'flat';
+  urgency: 'high' | 'medium' | 'low';
+  recommendedAction: string;
 }
 
 // Lightweight snapshot for client-side rendering (pages import this instead

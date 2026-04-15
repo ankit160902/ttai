@@ -1,6 +1,7 @@
 'use client';
 
 import ToolCallIndicator from './ToolCallIndicator';
+import TopicAccordion from './TopicAccordion';
 
 interface ToolInvocation {
   toolName: string;
@@ -52,15 +53,21 @@ export default function MessageBubble({ role, content, toolInvocations, isStream
         {/* Message content */}
         {content && (
           <div
-            className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+            className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
               isUser
-                ? 'bg-saffron-500 text-white rounded-br-md'
+                ? 'bg-saffron-500 text-white rounded-br-md whitespace-pre-wrap'
                 : 'bg-temple-card border border-temple-border text-temple-text rounded-bl-md shadow-sm'
             }`}
           >
-            {content}
-            {isStreaming && role === 'assistant' && (
-              <span className="inline-block w-1.5 h-4 bg-saffron-500 ml-0.5 animate-pulse" />
+            {!isUser && !isStreaming ? (
+              <TopicAccordion content={content} />
+            ) : (
+              <>
+                <span className="whitespace-pre-wrap">{content}</span>
+                {isStreaming && role === 'assistant' && (
+                  <span className="inline-block w-1.5 h-4 bg-saffron-500 ml-0.5 animate-pulse" />
+                )}
+              </>
             )}
           </div>
         )}

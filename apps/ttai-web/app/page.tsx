@@ -7,6 +7,7 @@ import { fmtINR, fmtCompact, formatRelative } from '../lib/format';
 import { findCatalogEntry } from '../lib/connectors/registry';
 import type { TempleSnapshot } from '../lib/temple-types';
 import Spinner from '../components/ui/Spinner';
+import TopicAccordion from '../components/chat/TopicAccordion';
 
 export default function HomePage() {
   const router = useRouter();
@@ -366,9 +367,18 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="max-w-3xl mx-auto px-4 lg:px-6 py-6 space-y-5">
-              {messages.map((m) => (
-                <MessageBubble key={m.id} role={m.role} content={m.content} />
-              ))}
+              {messages.map((m, i) => {
+                const isLast = i === messages.length - 1;
+                const streaming = isLoading && isLast && m.role === 'assistant';
+                return (
+                  <MessageBubble
+                    key={m.id}
+                    role={m.role}
+                    content={m.content}
+                    isStreaming={streaming}
+                  />
+                );
+              })}
               {isLoading && messages[messages.length - 1]?.role === 'user' && (
                 <div className="flex items-start gap-3">
                   <Avatar role="assistant" />
@@ -440,19 +450,32 @@ export default function HomePage() {
 
 /* ─── Helpers ─── */
 
-function MessageBubble({ role, content }: { role: string; content: string }) {
+function MessageBubble({
+  role,
+  content,
+  isStreaming,
+}: {
+  role: string;
+  content: string;
+  isStreaming?: boolean;
+}) {
   const isUser = role === 'user';
+  const useAccordion = !isUser && !isStreaming && content.length > 0;
   return (
     <div className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
       <Avatar role={role} />
       <div
-        className={`max-w-[82%] px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap rounded-md ${
+        className={`max-w-[82%] px-4 py-3 text-sm leading-relaxed rounded-md ${
           isUser
-            ? 'bg-ink-900 text-white rounded-tr-none'
+            ? 'bg-ink-900 text-white rounded-tr-none whitespace-pre-wrap'
             : 'bg-white border border-ink-200 text-ink-900 rounded-tl-none shadow-card'
         }`}
       >
-        {content}
+        {useAccordion ? (
+          <TopicAccordion content={content} />
+        ) : (
+          <span className="whitespace-pre-wrap">{content}</span>
+        )}
       </div>
     </div>
   );

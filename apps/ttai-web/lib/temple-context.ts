@@ -91,11 +91,66 @@ DATASET SIZE: ${temple.recentDonations.length.toLocaleString('en-IN')} donations
 - Staff: ${temple.staffRoster.length} on roster, ${availableStaff} available today
 - Daily Footfall: ${temple.stats.dailyFootfall.toLocaleString('en-IN')}
 
-═══ MONTHLY FINANCE ═══
+═══ MONTHLY FINANCE (current month snapshot) ═══
 - Revenue: ${fmt(temple.monthlyFinance.revenueINR)}
 - Expenses: ${fmt(temple.monthlyFinance.expensesINR)}
 - Net Surplus: ${fmt(temple.monthlyFinance.netSurplusINR)}
 - Top Expense: ${temple.monthlyFinance.topExpenseCategory}
+
+═══ PROFIT & LOSS — LAST 12 MONTHS (from 36-month P&L history) ═══
+${temple.monthlyPnL.slice(-12).map(m => `- ${m.month}: Revenue ${fmt(m.revenue.total)} | Expenses ${fmt(m.expenses.total)} | Surplus ${fmt(m.netSurplusINR)} (${m.marginPercent}% margin)`).join('\n')}
+
+Revenue mix — last month (${temple.monthlyPnL[temple.monthlyPnL.length - 1]?.month ?? 'N/A'}):
+${(() => {
+  const m = temple.monthlyPnL[temple.monthlyPnL.length - 1];
+  if (!m) return '  (no P&L data)';
+  const r = m.revenue;
+  return [
+    `  - Donations: ${fmt(r.donations)} (${Math.round(r.donations / r.total * 100)}%)`,
+    `  - Bookings: ${fmt(r.bookings)} (${Math.round(r.bookings / r.total * 100)}%)`,
+    `  - Sevas: ${fmt(r.sevas)} (${Math.round(r.sevas / r.total * 100)}%)`,
+    `  - Hundi: ${fmt(r.hundi)} (${Math.round(r.hundi / r.total * 100)}%)`,
+    `  - Dharamshala: ${fmt(r.dharamshala)} | Shop: ${fmt(r.shop)} | Parking: ${fmt(r.parking)} | Prasadam: ${fmt(r.prasadamContribution)} | Misc: ${fmt(r.miscellaneous)}`,
+  ].join('\n');
+})()}
+
+Cost breakdown — last month:
+${(() => {
+  const m = temple.monthlyPnL[temple.monthlyPnL.length - 1];
+  if (!m) return '  (no P&L data)';
+  const e = m.expenses;
+  return [
+    `  - Priest Salaries: ${fmt(e.priestSalaries)} | Staff Salaries: ${fmt(e.staffSalaries)}`,
+    `  - Annadanam Kitchen: ${fmt(e.annadanamKitchen)} | Vendor Payments: ${fmt(e.vendorPayments)}`,
+    `  - Maintenance: ${fmt(e.maintenance)} | Utilities: ${fmt(e.utilities)} | Security: ${fmt(e.security)} | Cleaning: ${fmt(e.cleaning)}`,
+    `  - Festival Prep: ${fmt(e.festivalPreparations)} | Administration: ${fmt(e.administration)}`,
+  ].join('\n');
+})()}
+
+Profitability signal:
+- Temple is ${temple.monthlyPnL[temple.monthlyPnL.length - 1] && temple.monthlyPnL[temple.monthlyPnL.length - 1]!.netSurplusINR > 0 ? 'PROFITABLE' : 'RUNNING A DEFICIT'} this month.
+- Trailing 12-month surplus: ${fmt(temple.monthlyPnL.slice(-12).reduce((s, m) => s + m.netSurplusINR, 0))}
+- Avg margin (12M): ${(temple.monthlyPnL.slice(-12).reduce((s, m) => s + m.marginPercent, 0) / 12).toFixed(1)}%
+
+═══ DAILY STATS — LAST 14 DAYS ═══
+${temple.dailyStats.slice(-14).map(d => `- ${d.date} (${d.dayOfWeek}): Footfall ${d.footfall.toLocaleString('en-IN')} | Donations ${fmt(d.donationsINR)} | Bookings ${d.bookingsCount} | Complaints +${d.complaintsOpened}/-${d.complaintsResolved} | Avg wait ${d.avgDarshanWaitMinutes} min | ${d.notableEvent}`).join('\n')}
+
+Daily stats dataset: ${temple.dailyStats.length} days available (use for day-of-week, weekend vs weekday, month-by-month patterns).
+
+Trailing 30-day averages:
+- Footfall/day: ${Math.round(temple.dailyStats.slice(-30).reduce((s, d) => s + d.footfall, 0) / 30).toLocaleString('en-IN')}
+- Donations/day: ${fmt(Math.round(temple.dailyStats.slice(-30).reduce((s, d) => s + d.donationsINR, 0) / 30))}
+- Bookings/day: ${Math.round(temple.dailyStats.slice(-30).reduce((s, d) => s + d.bookingsCount, 0) / 30)}
+- Darshan wait avg: ${Math.round(temple.dailyStats.slice(-30).reduce((s, d) => s + d.avgDarshanWaitMinutes, 0) / 30)} min
+- Hundi/day: ${fmt(Math.round(temple.dailyStats.slice(-30).reduce((s, d) => s + d.hundiCollectionINR, 0) / 30))}
+
+═══ 12-MONTH FORECAST (directional projections) ═══
+${temple.forecasts.map(f => `- ${f.month} [${f.confidence.toUpperCase()} confidence]: Revenue ${fmt(f.projectedRevenueINR)} | Expenses ${fmt(f.projectedExpensesINR)} | Surplus ${fmt(f.projectedSurplusINR)} | Footfall ${f.projectedFootfall.toLocaleString('en-IN')} | Major festival: ${f.dominantFestival}`).join('\n')}
+
+Forecast methodology: trailing-6-month average × seasonal index × growth trend. Treat as directional, not prescriptive.
+
+═══ KEY INSIGHTS (pre-computed cross-domain) ═══
+${temple.keyInsights.map(i => `[${i.urgency.toUpperCase()}] ${i.headline}\n  → ${i.detail}\n  → Action: ${i.recommendedAction}`).join('\n\n')}
 
 ═══ MONTH-ON-MONTH TRENDS ═══
 ${temple.historicalComparisons.slice(0, 12).map(h => `- ${h.metric}: ${h.thisMonth.toLocaleString('en-IN')} vs ${h.lastMonth.toLocaleString('en-IN')} (${h.changePercent >= 0 ? '+' : ''}${h.changePercent}%)`).join('\n')}
